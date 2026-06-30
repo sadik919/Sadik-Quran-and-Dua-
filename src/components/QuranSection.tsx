@@ -38,7 +38,7 @@ export default function QuranSection() {
   );
 
   const handlePlayAyahAudio = (ayah: any) => {
-    const audioUrl = `https://cdn.islamic.network/quran/audio/128/ar.alafasy/${ayah.surahNumber * 1000 + ayah.ayahNumber}.mp3`;
+  const audioUrl = "https://raw.githubusercontent.com/sadik919/Quran-audio/main/001.mp3";
     playAudio(`Surah ${selectedSurah} - Ayah ${ayah.ayahNumber}`, audioUrl);
   };
 
