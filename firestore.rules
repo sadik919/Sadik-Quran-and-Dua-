@@ -1,0 +1,80 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Auth helper
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerified() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (
+        request.auth.token.email == 'sadikullhaque999@gmail.com' ||
+        request.auth.token.email == 'sadikullhaque99@gmail.com' ||
+        request.auth.token.email.matches('admin@.*')
+      );
+    }
+
+    // Public collections (Anyone can read, Only verified users can write)
+    match /quran/{docId} {
+      allow read: if true;
+      allow write: if isVerified();
+    }
+    match /surahs/{docId} {
+      allow read: if true;
+      allow write: if isVerified();
+    }
+    match /ayahs/{docId} {
+      allow read: if true;
+      allow write: if isVerified();
+    }
+    match /hadith/{docId} {
+      allow read: if true;
+      allow write: if isVerified();
+    }
+    match /hadiths/{docId} {
+      allow read: if true;
+      allow write: if isVerified();
+    }
+    match /duas/{docId} {
+      allow read: if true;
+      allow write: if isVerified();
+    }
+    match /articles/{docId} {
+      allow read: if true;
+      allow write: if isVerified();
+    }
+    match /categories/{docId} {
+      allow read: if true;
+      allow write: if isVerified();
+    }
+    match /prayerTimes/{docId} {
+      allow read: if true;
+      allow write: if isVerified();
+    }
+    match /settings/{docId} {
+      allow read: if true;
+      allow write: if isVerified();
+    }
+    match /events/{docId} {
+      allow read: if true;
+      allow write: if isVerified();
+    }
+
+    // Feedbacks collection (Anyone can create, only verified users can read/write/update)
+    match /feedbacks/{feedbackId} {
+      allow read: if isVerified();
+      allow create: if true;
+      allow update, delete: if isVerified();
+    }
+  }
+}

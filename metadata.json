@@ -1,0 +1,6 @@
+{
+  "name": "Sadik Quran And Dua",
+  "description": "A beautiful, feature-rich and comprehensive Progressive Web App for Muslims featuring prayer times, Quran, Hadith, Dua, Tasbih, Qibla compass, Islamic calendar, and more.",
+  "requestFramePermissions": ["geolocation"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

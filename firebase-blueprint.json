@@ -1,0 +1,130 @@
+{
+  "entities": {
+    "Surah": {
+      "title": "Surah",
+      "description": "Quranic Surah metadata",
+      "type": "object",
+      "properties": {
+        "number": { "type": "number" },
+        "name": { "type": "string" },
+        "englishName": { "type": "string" },
+        "englishNameTranslation": { "type": "string" },
+        "numberOfAyahs": { "type": "number" },
+        "revelationType": { "type": "string" }
+      },
+      "required": ["number", "name", "englishName"]
+    },
+    "Ayah": {
+      "title": "Ayah",
+      "description": "Quranic Ayah (verse)",
+      "type": "object",
+      "properties": {
+        "surahNumber": { "type": "number" },
+        "ayahNumber": { "type": "number" },
+        "textArabic": { "type": "string" },
+        "textEnglish": { "type": "string" },
+        "textBangla": { "type": "string" },
+        "audioUrl": { "type": "string" }
+      },
+      "required": ["surahNumber", "ayahNumber", "textArabic"]
+    },
+    "Hadith": {
+      "title": "Hadith",
+      "description": "Prophetic tradition",
+      "type": "object",
+      "properties": {
+        "book": { "type": "string" },
+        "hadithNumber": { "type": "string" },
+        "chapter": { "type": "string" },
+        "narrator": { "type": "string" },
+        "arabic": { "type": "string" },
+        "english": { "type": "string" },
+        "bangla": { "type": "string" }
+      },
+      "required": ["book", "hadithNumber", "arabic"]
+    },
+    "Dua": {
+      "title": "Dua",
+      "description": "Supplication / Prayer",
+      "type": "object",
+      "properties": {
+        "category": { "type": "string" },
+        "title": { "type": "string" },
+        "arabic": { "type": "string" },
+        "transliteration": { "type": "string" },
+        "english": { "type": "string" },
+        "bangla": { "type": "string" },
+        "reference": { "type": "string" }
+      },
+      "required": ["title", "arabic"]
+    },
+    "Article": {
+      "title": "Article",
+      "description": "Islamic article or post",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "content": { "type": "string" },
+        "author": { "type": "string" },
+        "date": { "type": "string" },
+        "category": { "type": "string" },
+        "readTime": { "type": "string" }
+      },
+      "required": ["title", "content", "author"]
+    },
+    "Event": {
+      "title": "Event",
+      "description": "Islamic calendar event",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "hijriDate": { "type": "string" },
+        "gregorianDate": { "type": "string" },
+        "description": { "type": "string" },
+        "type": { "type": "string" }
+      },
+      "required": ["title", "hijriDate"]
+    },
+    "Feedback": {
+      "title": "Feedback",
+      "description": "User feedback or bug reports",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "email": { "type": "string" },
+        "message": { "type": "string" }
+      },
+      "required": ["message"]
+    }
+  },
+  "firestore": {
+    "surahs": {
+      "schema": "Surah",
+      "description": "Quranic Surahs list"
+    },
+    "ayahs": {
+      "schema": "Ayah",
+      "description": "Quranic Ayahs list"
+    },
+    "hadiths": {
+      "schema": "Hadith",
+      "description": "Hadiths list"
+    },
+    "duas": {
+      "schema": "Dua",
+      "description": "Duas list"
+    },
+    "articles": {
+      "schema": "Article",
+      "description": "Islamic articles"
+    },
+    "events": {
+      "schema": "Event",
+      "description": "Islamic calendar events"
+    },
+    "feedbacks": {
+      "schema": "Feedback",
+      "description": "User feedbacks & bug reports"
+    }
+  }
+}
