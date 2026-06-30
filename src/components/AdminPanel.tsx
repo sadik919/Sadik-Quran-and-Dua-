@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import {
   Settings, Database, FileOutput, FileInput, Plus, Trash2, Edit, AlertCircle,
-  BarChart2, Users, Bell, Globe, Sparkles, FolderUp, CheckCircle, Save, ArrowLeft, Search, Folder
+  BarChart2, Users, Bell, Globe, Sparkles, FolderUp, CheckCircle, Save, ArrowLeft, Search, Folder, Clock
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { db } from '../lib/firebase';
@@ -15,7 +15,7 @@ export default function AdminPanel() {
     settings, updateSettings
   } = useApp();
 
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'quran' | 'hadith' | 'dua' | 'articles' | 'events' | 'categories' | 'database'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'quran' | 'hadith' | 'dua' | 'articles' | 'events' | 'categories' | 'database' | 'prayerTimes'>('dashboard');
   const [successMsg, setSuccessMsg] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
   const [adminSearchQuery, setAdminSearchQuery] = useState("");
@@ -363,6 +363,7 @@ export default function AdminPanel() {
           { key: 'articles', label: 'Articles', icon: Plus },
           { key: 'events', label: 'Islamic Events', icon: Plus },
           { key: 'categories', label: 'Categories', icon: Folder },
+          { key: 'prayerTimes', label: 'Prayer Times', icon: Clock },
           { key: 'database', label: 'Database Backup', icon: Database }
         ].map((tab) => (
           <button
@@ -382,6 +383,40 @@ export default function AdminPanel() {
 
       {/* Content switcher based on Tab */}
       <div className="bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-3xl p-5 shadow-sm">
+        {activeTab === 'prayerTimes' && (
+          <div className="space-y-6 text-xs">
+            <h4 className="text-sm font-bold text-slate-800 dark:text-white uppercase tracking-wider border-b border-slate-50 dark:border-slate-700/50 pb-3 flex justify-between items-center">
+              <span>Custom Prayer Times Override</span>
+            </h4>
+            
+            <p className="text-slate-500 dark:text-slate-400">
+              Leave a field empty to use the auto-calculated times for the city. Setting a custom time here will override the default calculation for all users globally. Format: `HH:MM AM/PM` (e.g., `04:30 AM`).
+            </p>
+
+            <div className="grid gap-4 bg-slate-50 dark:bg-slate-900/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-800">
+              {(["fajr", "sunrise", "dhuhr", "asr", "maghrib", "isha"] as const).map((prayer) => (
+                <div key={prayer} className="flex justify-between items-center gap-4">
+                  <label className="font-bold text-slate-700 dark:text-slate-300 uppercase w-24 shrink-0 capitalize">{prayer}</label>
+                  <input
+                    type="text"
+                    value={settings.customPrayerTimes?.[prayer] || ""}
+                    onChange={(e) => updateSettings('customPrayerTimes', { ...settings.customPrayerTimes, [prayer]: e.target.value })}
+                    placeholder="e.g. 05:00 AM"
+                    className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-slate-800 dark:text-white focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                  />
+                </div>
+              ))}
+            </div>
+            
+            <div className="bg-amber-50 dark:bg-amber-950/20 text-amber-800 dark:text-amber-400 p-3 rounded-xl flex items-start gap-2">
+              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+              <span>
+                Changes are saved immediately and synced globally to all active users connecting to the Firestore database.
+              </span>
+            </div>
+          </div>
+        )}
+
         {activeTab === 'dashboard' && (
           <div className="space-y-6">
             <h4 className="text-sm font-bold text-slate-800 dark:text-white uppercase tracking-wider border-b border-slate-50 dark:border-slate-700/50 pb-3">

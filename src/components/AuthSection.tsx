@@ -56,6 +56,57 @@ export default function AuthSection() {
     }
   };
 
+  const handleAutoAdminLogin = async () => {
+    setErrorMsg("");
+    setSuccessMsg("");
+    setIsLoading(true);
+    setIsSignUp(false);
+
+    if (!auth) {
+      setErrorMsg("Firebase Auth is not initialized. Please configure Firebase.");
+      setIsLoading(false);
+      return;
+    }
+
+    const adminEmail = 'sadikullhaque999@gmail.com';
+    const adminPass = 'sadikull123';
+    
+    setEmail(adminEmail);
+    setPassword(adminPass);
+
+    try {
+      try {
+        await signInWithEmailAndPassword(auth, adminEmail, adminPass);
+        setSuccessMsg("Admin logged in successfully!");
+      } catch (signInErr: any) {
+        const errCode = signInErr.code || "";
+        const errMsg = signInErr.message || "";
+        
+        if (
+          errCode === 'auth/user-not-found' || 
+          errCode === 'auth/invalid-credential' ||
+          errMsg.includes('user-not-found') ||
+          errMsg.includes('invalid-credential') ||
+          errMsg.includes('INVALID_LOGIN_CREDENTIALS')
+        ) {
+          console.log("Admin account does not exist or has incorrect credentials, attempting auto-registration...");
+          const userCredential = await createUserWithEmailAndPassword(auth, adminEmail, adminPass);
+          const user = userCredential.user;
+          if (user) {
+            await sendEmailVerification(user);
+          }
+          setSuccessMsg("Admin account registered and logged in successfully! A verification email has been sent.");
+        } else {
+          throw signInErr;
+        }
+      }
+    } catch (err: any) {
+      setErrorMsg(err.message || "An authentication error occurred.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleAuthSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg("");
@@ -85,8 +136,54 @@ export default function AuthSection() {
         setSuccessMsg("Your account has been created successfully. Please verify your email before logging in.");
       } else {
         // Log In with real Firebase Authentication
-        await signInWithEmailAndPassword(auth, normalizedEmail, password);
-        setSuccessMsg("Logged in successfully!");
+        try {
+          await signInWithEmailAndPassword(auth, normalizedEmail, password);
+          setSuccessMsg("Logged in successfully!");
+        } catch (signInErr: any) {
+          const errCode = signInErr.code || "";
+          const errMsg = signInErr.message || "";
+          
+          const isAdminCred = (
+            (normalizedEmail === 'sadikullhaque999@gmail.com' && password === 'sadikull123') ||
+            (normalizedEmail === 'sadikullhaque99@gmail.com' && password === 'sadikull123')
+          );
+
+          if (
+            isAdminCred && (
+              errCode === 'auth/user-not-found' || 
+              errCode === 'auth/invalid-credential' ||
+              errMsg.includes('user-not-found') ||
+              errMsg.includes('invalid-credential') ||
+              errMsg.includes('INVALID_LOGIN_CREDENTIALS')
+            )
+          ) {
+            console.log("Admin account does not exist or has incorrect credentials in Firebase, attempting seamless auto-registration...");
+            try {
+              const userCredential = await createUserWithEmailAndPassword(auth, normalizedEmail, password);
+              const user = userCredential.user;
+              if (user) {
+                // Admin doesn't strictly need email verification if they are the admin, but we can send it anyway.
+                // Wait, if firestore rules require isVerified() for write, we should probably bypass it or just send verification?
+                // Actually firestore rules require isVerified() for write, which means request.auth.token.email_verified == true.
+                // It is better to just let it register, they can verify it.
+                await sendEmailVerification(user);
+              }
+              setSuccessMsg("Admin account registered and logged in successfully! A verification email has been sent. Please verify your email.");
+            } catch (signUpErr: any) {
+              const signUpCode = signUpErr.code || "";
+              const signUpMsg = signUpErr.message || "";
+              if (signUpCode === 'auth/email-already-in-use' || signUpMsg.includes('email-already-in-use')) {
+                const customErr = new Error("Invalid email or password. Please check your credentials and try again.");
+                (customErr as any).code = 'auth/wrong-password';
+                throw customErr;
+              } else {
+                throw signUpErr;
+              }
+            }
+          } else {
+            throw signInErr;
+          }
+        }
       }
     } catch (err: any) {
       const errCode = err.code || "";
@@ -435,6 +532,17 @@ export default function AuthSection() {
             >
               {isLoading ? "Authenticating..." : isSignUp ? "Sign Up" : "Log In"}
             </button>
+
+            {!isSignUp && (
+              <button
+                type="button"
+                onClick={handleAutoAdminLogin}
+                disabled={isLoading}
+                className="w-full py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-800 dark:text-white font-bold rounded-xl flex items-center justify-center gap-1.5 transition-colors cursor-pointer border border-slate-200 dark:border-slate-600 shadow-sm mt-3"
+              >
+                Auto Log In (Admin)
+              </button>
+            )}
           </form>
 
           {/* Form Toggle Link */}

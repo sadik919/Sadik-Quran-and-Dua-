@@ -157,5 +157,13 @@ export const defaultSettings = {
   fontSize: 18,
   accessibilityMode: false,
   reminderMinutes: 15,
-  isDarkMode: false
+  isDarkMode: false,
+  customPrayerTimes: {
+    fajr: "",
+    sunrise: "",
+    dhuhr: "",
+    asr: "",
+    maghrib: "",
+    isha: ""
+  }
 };

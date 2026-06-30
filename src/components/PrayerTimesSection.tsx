@@ -39,13 +39,23 @@ export default function PrayerTimesSection() {
     const maghribHour = 18 + Math.round(lat / 20);
     const ishaHour = 19 + Math.round(lat / 15);
 
-    return {
+    const calculated = {
       fajr: `${String(fajrHour).padStart(2, '0')}:15 AM`,
       sunrise: `${String(fajrHour + 1).padStart(2, '0')}:35 AM`,
       dhuhr: `${dhuhrHour}:05 PM`,
       asr: `${asrHour}:30 PM`,
       maghrib: `${maghribHour - 12}:45 PM`,
       isha: `${ishaHour - 12}:55 PM`
+    };
+
+    // Override with any admin-configured custom prayer times
+    return {
+      fajr: settings.customPrayerTimes?.fajr || calculated.fajr,
+      sunrise: settings.customPrayerTimes?.sunrise || calculated.sunrise,
+      dhuhr: settings.customPrayerTimes?.dhuhr || calculated.dhuhr,
+      asr: settings.customPrayerTimes?.asr || calculated.asr,
+      maghrib: settings.customPrayerTimes?.maghrib || calculated.maghrib,
+      isha: settings.customPrayerTimes?.isha || calculated.isha
     };
   };
 
