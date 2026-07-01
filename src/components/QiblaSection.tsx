@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from '../utils/translations';
 import { Compass, Navigation, MapPin, RefreshCw, AlertTriangle } from 'lucide-react';
 import { motion } from 'motion/react';
 
 export default function QiblaSection() {
+  const { currentLanguage } = useTranslation();
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [qiblaAngle, setQiblaAngle] = useState<number>(119); // Default Qibla from Dhaka is ~119 degrees
   const [deviceHeading, setDeviceHeading] = useState<number>(0);
@@ -38,13 +40,21 @@ export default function QiblaSection() {
           setQiblaAngle(calculated);
           setIsLocating(false);
         },
-        (err) => {
-          setErrorMsg("GPS permission denied or unavailable. Defaulting to general South-West direction (~119°).");
+        () => {
+          setErrorMsg(
+            currentLanguage === 'Bangla'
+              ? "জিপিএস অনুমতি দেওয়া হয়নি বা পাওয়া যায়নি। দক্ষিণ-পশ্চিমের ডিফল্ট কিবলা কোণ (~১১৯°) ব্যবহার করা হচ্ছে।"
+              : "GPS permission denied or unavailable. Defaulting to general South-West direction (~119°)."
+          );
           setIsLocating(false);
         }
       );
     } else {
-      setErrorMsg("Geolocation is not supported by your browser.");
+      setErrorMsg(
+        currentLanguage === 'Bangla'
+          ? "আপনার ব্রাউজারে জিপিএস সমর্থিত নয়।"
+          : "Geolocation is not supported by your browser."
+      );
       setIsLocating(false);
     }
   };
@@ -91,10 +101,14 @@ export default function QiblaSection() {
       {/* Dynamic Banner */}
       <div className="bg-gradient-to-br from-emerald-800 to-emerald-950 text-white rounded-3xl p-6 shadow-xl relative overflow-hidden text-center">
         <div className="relative z-10 space-y-1">
-          <span className="text-amber-400 text-xs font-bold tracking-widest uppercase block">Makkah Direction Finder</span>
-          <h3 className="text-2xl font-serif font-bold text-amber-200">Qibla Compass</h3>
+          <span className="text-amber-400 text-xs font-bold tracking-widest uppercase block">
+            {currentLanguage === 'Bangla' ? 'মক্কা দিক নির্দেশক' : 'Makkah Direction Finder'}
+          </span>
+          <h3 className="text-2xl font-serif font-bold text-amber-200">{currentLanguage === 'Bangla' ? 'কিবলা কম্পাস' : 'Qibla Compass'}</h3>
           <p className="text-emerald-100 text-xs px-4">
-            Place your phone flat on a horizontal surface. Ensure you are away from metal or magnetic objects for accuracy.
+            {currentLanguage === 'Bangla'
+              ? 'সঠিক পরিমাপের জন্য আপনার ফোনটি সমতল স্থানে রাখুন এবং যেকোনো ধাতব বা চৌম্বকীয় বস্তু থেকে দূরে থাকুন।'
+              : 'Place your phone flat on a horizontal surface. Ensure you are away from metal or magnetic objects for accuracy.'}
           </p>
         </div>
       </div>
@@ -106,11 +120,15 @@ export default function QiblaSection() {
             <MapPin className="w-5 h-5" />
           </div>
           <div>
-            <span className="font-bold text-slate-750 dark:text-white block">GPS Geolocation</span>
+            <span className="font-bold text-slate-755 dark:text-white block">
+              {currentLanguage === 'Bangla' ? 'জিপিএস অবস্থান' : 'GPS Geolocation'}
+            </span>
             {coords ? (
-              <p className="text-slate-450 dark:text-slate-500 font-mono">Lat: {coords.lat.toFixed(4)} • Lng: {coords.lng.toFixed(4)}</p>
+              <p className="text-slate-450 dark:text-slate-505 font-mono">Lat: {coords.lat.toFixed(4)} • Lng: {coords.lng.toFixed(4)}</p>
             ) : (
-              <p className="text-slate-450 dark:text-slate-500">Not connected to GPS</p>
+              <p className="text-slate-450 dark:text-slate-505">
+                {currentLanguage === 'Bangla' ? 'জিপিএস যুক্ত নেই' : 'Not connected to GPS'}
+              </p>
             )}
           </div>
         </div>
@@ -120,7 +138,9 @@ export default function QiblaSection() {
           className={`px-3 py-2 bg-emerald-850 hover:bg-emerald-800 text-white font-semibold rounded-xl flex items-center gap-1.5 transition-colors cursor-pointer ${isLocating ? 'opacity-80' : ''}`}
         >
           <RefreshCw className={`w-3.5 h-3.5 ${isLocating ? 'animate-spin' : ''}`} />
-          {coords ? "Recalculate" : "Sync Location"}
+          {coords 
+            ? (currentLanguage === 'Bangla' ? 'পুনরায় গণনা' : 'Recalculate') 
+            : (currentLanguage === 'Bangla' ? 'অবস্থান সিঙ্ক করুন' : 'Sync Location')}
         </button>
       </div>
 
@@ -154,7 +174,9 @@ export default function QiblaSection() {
             {/* Golden Arrow Pointer pointing directly to Qibla */}
             <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-5 flex flex-col items-center">
               <Navigation className="w-8 h-8 text-amber-500 fill-current" />
-              <span className="text-[9px] font-bold bg-amber-400 text-emerald-950 px-2 py-0.5 rounded-full mt-0.5 shadow">KAABA</span>
+              <span className="text-[9px] font-bold bg-amber-400 text-emerald-950 px-2 py-0.5 rounded-full mt-0.5 shadow">
+                {currentLanguage === 'Bangla' ? 'কাবা' : 'KAABA'}
+              </span>
             </div>
           </motion.div>
 
@@ -176,11 +198,15 @@ export default function QiblaSection() {
         {/* Degree Readouts */}
         <div className="grid grid-cols-2 gap-8 text-center mt-6 w-full max-w-xs border-t border-slate-100 dark:border-slate-700/60 pt-4">
           <div>
-            <span className="text-[10px] uppercase font-bold text-slate-400 dark:text-slate-500">Qibla Direction</span>
+            <span className="text-[10px] uppercase font-bold text-slate-400 dark:text-slate-550">
+              {currentLanguage === 'Bangla' ? 'কিবলার দিক কোণ' : 'Qibla Direction'}
+            </span>
             <p className="text-xl font-mono font-black text-emerald-700 dark:text-emerald-400">{qiblaAngle}° N</p>
           </div>
           <div>
-            <span className="text-[10px] uppercase font-bold text-slate-400 dark:text-slate-500">Device Heading</span>
+            <span className="text-[10px] uppercase font-bold text-slate-400 dark:text-slate-555">
+              {currentLanguage === 'Bangla' ? 'ডিভাইসের দিক কোণ' : 'Device Heading'}
+            </span>
             <p className="text-xl font-mono font-black text-slate-800 dark:text-white">{Math.round(deviceHeading)}°</p>
           </div>
         </div>

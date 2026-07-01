@@ -1,14 +1,16 @@
 import { useState } from 'react';
 import { useApp } from '../context/AppContext';
-import { Search, Bookmark, Copy, Share2, Star, Sparkles } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
+import { useTranslation } from '../utils/translations';
+import { Search, Bookmark, Copy, Share2, Sparkles } from 'lucide-react';
+import { motion } from 'motion/react';
 
 export default function DuaSection() {
   const { duas, bookmarkedDuas, toggleBookmarkDua, settings } = useApp();
+  const { t, currentLanguage } = useTranslation();
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
   const [searchQuery, setSearchQuery] = useState("");
 
-  const categories = ["All", "Daily", "Morning & Evening", "Travel", "Food", "Prayer"];
+  const categories = ["All", "Daily", "Morning & Evening", "Travel", "Food", "Prayer", "Other"];
 
   const filteredDuas = duas.filter(d => {
     const matchesCategory = selectedCategory === "All" || d.category === selectedCategory;
@@ -23,7 +25,7 @@ export default function DuaSection() {
   const copyDua = (dua: any) => {
     const text = `${dua.title}\n\n${dua.arabic}\n\n[English]: ${dua.english}\n[Bangla]: ${dua.bangla}\nRef: ${dua.reference || "N/A"}`;
     navigator.clipboard.writeText(text);
-    alert("Dua copied to clipboard!");
+    alert(currentLanguage === 'Bangla' ? "দোয়া ক্লিপবোর্ডে কপি করা হয়েছে!" : "Dua copied to clipboard!");
   };
 
   const shareDua = (dua: any) => {
@@ -53,7 +55,7 @@ export default function DuaSection() {
                 : "bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 text-slate-650 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50"
             }`}
           >
-            {cat}
+            {t(cat)}
           </button>
         ))}
       </div>
@@ -64,7 +66,7 @@ export default function DuaSection() {
         <input
           id="dua-search"
           type="text"
-          placeholder="Search Duas by title, arabic text, translations..."
+          placeholder={t("search_dua")}
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl pl-12 pr-4 py-3 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-800 dark:text-white"
@@ -92,7 +94,7 @@ export default function DuaSection() {
                       {dua.title}
                     </h4>
                     <span className="text-[10px] font-semibold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/30 px-2 py-0.5 rounded-full mt-1 inline-block">
-                      {dua.category}
+                      {t(dua.category)}
                     </span>
                   </div>
 
@@ -142,8 +144,8 @@ export default function DuaSection() {
 
                 {/* Translations */}
                 <div className="space-y-2 pt-1 border-t border-slate-50 dark:border-slate-700/40">
-                  <p className="text-xs leading-relaxed text-slate-700 dark:text-slate-300 font-medium" style={{ fontFamily: settings.banglaFont === 'Hind Siliguri' ? 'Hind Siliguri, sans-serif' : 'inherit' }}>
-                    <span className="text-[9px] font-bold text-emerald-700 dark:text-emerald-400 mr-2 uppercase">Bangla:</span>
+                  <p className="text-xs leading-relaxed text-slate-705 dark:text-slate-300 font-medium" style={{ fontFamily: settings.banglaFont === 'Hind Siliguri' ? 'Hind Siliguri, sans-serif' : 'inherit' }}>
+                    <span className="text-[9px] font-bold text-emerald-700 dark:text-emerald-400 mr-2 uppercase">{currentLanguage === 'Bangla' ? 'বাংলা:' : 'Bangla:'}</span>
                     {dua.bangla}
                   </p>
                   <p className="text-xs leading-relaxed text-slate-650 dark:text-slate-300">
@@ -164,7 +166,7 @@ export default function DuaSection() {
         ) : (
           <div className="text-center py-12 bg-white dark:bg-slate-800 rounded-2xl border border-dashed border-slate-200 dark:border-slate-700">
             <Sparkles className="w-8 h-8 mx-auto text-emerald-400 mb-2" />
-            <p className="text-slate-500 dark:text-slate-400 text-sm">No Duas match your filter or search.</p>
+            <p className="text-slate-500 dark:text-slate-400 text-sm">{t("no_duas")}</p>
           </div>
         )}
       </div>

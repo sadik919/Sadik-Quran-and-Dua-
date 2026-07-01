@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import { useApp } from '../context/AppContext';
+import { useTranslation } from '../utils/translations';
 import { Search, Bookmark, Copy, Share2, Sparkles, BookOpen } from 'lucide-react';
 import { motion } from 'motion/react';
 
 export default function HadithSection() {
   const { hadiths, bookmarkedHadiths, toggleBookmarkHadith, settings } = useApp();
+  const { t, currentLanguage } = useTranslation();
   const [selectedBook, setSelectedBook] = useState<string>("All");
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -24,7 +26,7 @@ export default function HadithSection() {
   const copyHadith = (hadith: any) => {
     const text = `Hadith (${hadith.book})\nNarrator: ${hadith.narrator}\n\n${hadith.arabic}\n\n[English]: ${hadith.english}\n[Bangla]: ${hadith.bangla}\nNumber: ${hadith.hadithNumber}`;
     navigator.clipboard.writeText(text);
-    alert("Hadith copied to clipboard!");
+    alert(currentLanguage === 'Bangla' ? "হাদিস ক্লিপবোর্ডে কপি করা হয়েছে!" : "Hadith copied to clipboard!");
   };
 
   const shareHadith = (hadith: any) => {
@@ -54,7 +56,7 @@ export default function HadithSection() {
                 : "bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 text-slate-650 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50"
             }`}
           >
-            {book}
+            {book === "All" ? t("All") : book}
           </button>
         ))}
       </div>
@@ -65,7 +67,7 @@ export default function HadithSection() {
         <input
           id="hadith-search"
           type="text"
-          placeholder="Search Hadith by narrator, content or number..."
+          placeholder={t("search_hadith")}
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl pl-12 pr-4 py-3 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-800 dark:text-white"
@@ -94,7 +96,7 @@ export default function HadithSection() {
                       {hadith.book}
                     </h4>
                     <span className="text-[10px] text-slate-400 dark:text-slate-500 font-medium font-mono">
-                      Hadith No: {hadith.hadithNumber} • Chapter: {hadith.chapter}
+                      {currentLanguage === 'Bangla' ? 'হাদিস নং: ' : 'Hadith No: '} {hadith.hadithNumber} • {currentLanguage === 'Bangla' ? 'অধ্যায়: ' : 'Chapter: '} {hadith.chapter}
                     </span>
                   </div>
 
@@ -127,7 +129,7 @@ export default function HadithSection() {
 
                 {/* Narrator */}
                 <div className="text-xs text-emerald-850 dark:text-emerald-300 font-semibold bg-emerald-50/50 dark:bg-emerald-950/20 px-3 py-1.5 rounded-xl">
-                  Narrated by {hadith.narrator} (RA)
+                  {t("narrated_by")} {hadith.narrator}
                 </div>
 
                 {/* Arabic */}
@@ -143,8 +145,8 @@ export default function HadithSection() {
 
                 {/* Translations */}
                 <div className="space-y-3 pt-2 border-t border-slate-50 dark:border-slate-700/45">
-                  <p className="text-xs leading-relaxed text-slate-750 dark:text-slate-300 font-medium" style={{ fontFamily: settings.banglaFont === 'Hind Siliguri' ? 'Hind Siliguri, sans-serif' : 'inherit' }}>
-                    <span className="text-[9px] font-bold text-emerald-700 dark:text-emerald-400 mr-2 uppercase">Bangla:</span>
+                  <p className="text-xs leading-relaxed text-slate-755 dark:text-slate-300 font-medium" style={{ fontFamily: settings.banglaFont === 'Hind Siliguri' ? 'Hind Siliguri, sans-serif' : 'inherit' }}>
+                    <span className="text-[9px] font-bold text-emerald-700 dark:text-emerald-400 mr-2 uppercase">{currentLanguage === 'Bangla' ? 'বাংলা:' : 'Bangla:'}</span>
                     {hadith.bangla}
                   </p>
                   <p className="text-xs leading-relaxed text-slate-650 dark:text-slate-350">
@@ -158,7 +160,7 @@ export default function HadithSection() {
         ) : (
           <div className="text-center py-12 bg-white dark:bg-slate-800 rounded-2xl border border-dashed border-slate-200 dark:border-slate-700">
             <Sparkles className="w-8 h-8 mx-auto text-emerald-400 mb-2" />
-            <p className="text-slate-500 dark:text-slate-400 text-sm">No Hadiths match your filter or search.</p>
+            <p className="text-slate-500 dark:text-slate-400 text-sm">{t("no_hadiths")}</p>
           </div>
         )}
       </div>

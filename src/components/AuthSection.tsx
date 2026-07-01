@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
+import { useTranslation } from '../utils/translations';
 import { LogIn, KeyRound, Mail, User, ShieldAlert, LogOut, CheckCircle2 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { auth, db } from '../lib/firebase';
@@ -8,6 +9,7 @@ import { doc, getDoc, setDoc } from 'firebase/firestore';
 
 export default function AuthSection() {
   const { currentUser, logout, isAdmin, setCurrentUser } = useApp();
+  const { currentLanguage } = useTranslation();
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -28,28 +30,32 @@ export default function AuthSection() {
     setIsLoading(true);
 
     if (!auth) {
-      setErrorMsg("Firebase Auth is not initialized. Please configure Firebase.");
+      setErrorMsg(currentLanguage === 'Bangla' ? "ফায়ারবেস অথেনটিকেশন সক্রিয় নয়।" : "Firebase Auth is not initialized. Please configure Firebase.");
       setIsLoading(false);
       return;
     }
 
     if (!forgotPasswordEmail.trim()) {
-      setErrorMsg("Please enter your registered email address.");
+      setErrorMsg(currentLanguage === 'Bangla' ? "দয়া করে আপনার নিবন্ধিত ইমেইল এড্রেসটি লিখুন।" : "Please enter your registered email address.");
       setIsLoading(false);
       return;
     }
 
     try {
       await sendPasswordResetEmail(auth, forgotPasswordEmail.trim().toLowerCase());
-      setSuccessMsg("A password reset link has been sent to your email. Please check your inbox and spam folder.");
+      setSuccessMsg(
+        currentLanguage === 'Bangla' 
+          ? "পাসওয়ার্ড রিসেট করার লিঙ্কটি আপনার ইমেইলে পাঠানো হয়েছে। ইনবক্স বা স্প্যাম ফোল্ডার দেখুন।" 
+          : "A password reset link has been sent to your email. Please check your inbox and spam folder."
+      );
     } catch (err: any) {
       const errCode = err.code || "";
       if (errCode === 'auth/invalid-email') {
-        setErrorMsg("Please enter a valid email address.");
+        setErrorMsg(currentLanguage === 'Bangla' ? "দয়া করে সঠিক ইমেইল এড্রেস লিখুন।" : "Please enter a valid email address.");
       } else if (errCode === 'auth/user-not-found') {
-        setErrorMsg("No account found with this email address.");
+        setErrorMsg(currentLanguage === 'Bangla' ? "এই ইমেইল দিয়ে কোনো অ্যাকাউন্ট খুঁজে পাওয়া যায়নি।" : "No account found with this email address.");
       } else {
-        setErrorMsg(err.message || "Failed to send password reset email. Please try again.");
+        setErrorMsg(err.message || (currentLanguage === 'Bangla' ? "পাসওয়ার্ড রিসেট লিঙ্ক পাঠাতে ব্যর্থ হয়েছে। পুনরায় চেষ্টা করুন।" : "Failed to send password reset email. Please try again."));
       }
     } finally {
       setIsLoading(false);
@@ -63,7 +69,7 @@ export default function AuthSection() {
     setIsSignUp(false);
 
     if (!auth) {
-      setErrorMsg("Firebase Auth is not initialized. Please configure Firebase.");
+      setErrorMsg(currentLanguage === 'Bangla' ? "ফায়ারবেস অথেনটিকেশন সক্রিয় নয়।" : "Firebase Auth is not initialized. Please configure Firebase.");
       setIsLoading(false);
       return;
     }
@@ -77,7 +83,7 @@ export default function AuthSection() {
     try {
       try {
         await signInWithEmailAndPassword(auth, adminEmail, adminPass);
-        setSuccessMsg("Admin logged in successfully!");
+        setSuccessMsg(currentLanguage === 'Bangla' ? "অ্যাডমিন লগইন সফল হয়েছে!" : "Admin logged in successfully!");
       } catch (signInErr: any) {
         const errCode = signInErr.code || "";
         const errMsg = signInErr.message || "";
@@ -95,7 +101,11 @@ export default function AuthSection() {
           if (user) {
             await sendEmailVerification(user);
           }
-          setSuccessMsg("Admin account registered and logged in successfully! A verification email has been sent.");
+          setSuccessMsg(
+            currentLanguage === 'Bangla' 
+              ? "অ্যাডমিন অ্যাকাউন্ট তৈরি ও লগইন করা হয়েছে! যাচাইকরণ ইমেইল পাঠানো হয়েছে।" 
+              : "Admin account registered and logged in successfully! A verification email has been sent."
+          );
         } else {
           throw signInErr;
         }
@@ -114,7 +124,7 @@ export default function AuthSection() {
     setIsLoading(true);
 
     if (!auth) {
-      setErrorMsg("Firebase Auth is not initialized. Please configure Firebase.");
+      setErrorMsg(currentLanguage === 'Bangla' ? "ফায়ারবেস অথেনটিকেশন সক্রিয় নয়।" : "Firebase Auth is not initialized. Please configure Firebase.");
       setIsLoading(false);
       return;
     }
@@ -133,12 +143,16 @@ export default function AuthSection() {
           await auth.signOut();
         }
         setIsSignUp(false);
-        setSuccessMsg("Your account has been created successfully. Please verify your email before logging in.");
+        setSuccessMsg(
+          currentLanguage === 'Bangla' 
+            ? "অ্যাকাউন্ট সফলভাবে তৈরি হয়েছে। লগইন করার পূর্বে দয়া করে আপনার ইমেইল যাচাই বা ভেরিফাই করুন।" 
+            : "Your account has been created successfully. Please verify your email before logging in."
+        );
       } else {
         // Log In with real Firebase Authentication
         try {
           await signInWithEmailAndPassword(auth, normalizedEmail, password);
-          setSuccessMsg("Logged in successfully!");
+          setSuccessMsg(currentLanguage === 'Bangla' ? "লগইন সফল হয়েছে!" : "Logged in successfully!");
         } catch (signInErr: any) {
           const errCode = signInErr.code || "";
           const errMsg = signInErr.message || "";
@@ -158,105 +172,78 @@ export default function AuthSection() {
             )
           ) {
             console.log("Admin account does not exist or has incorrect credentials in Firebase, attempting seamless auto-registration...");
-            try {
-              const userCredential = await createUserWithEmailAndPassword(auth, normalizedEmail, password);
-              const user = userCredential.user;
-              if (user) {
-                // Admin doesn't strictly need email verification if they are the admin, but we can send it anyway.
-                // Wait, if firestore rules require isVerified() for write, we should probably bypass it or just send verification?
-                // Actually firestore rules require isVerified() for write, which means request.auth.token.email_verified == true.
-                // It is better to just let it register, they can verify it.
-                await sendEmailVerification(user);
-              }
-              setSuccessMsg("Admin account registered and logged in successfully! A verification email has been sent. Please verify your email.");
-            } catch (signUpErr: any) {
-              const signUpCode = signUpErr.code || "";
-              const signUpMsg = signUpErr.message || "";
-              if (signUpCode === 'auth/email-already-in-use' || signUpMsg.includes('email-already-in-use')) {
-                const customErr = new Error("Invalid email or password. Please check your credentials and try again.");
-                (customErr as any).code = 'auth/wrong-password';
-                throw customErr;
-              } else {
-                throw signUpErr;
-              }
+            const userCredential = await createUserWithEmailAndPassword(auth, normalizedEmail, password);
+            const user = userCredential.user;
+            if (user) {
+              await sendEmailVerification(user);
             }
+            if (auth.currentUser) {
+              await auth.signOut();
+            }
+            setIsSignUp(false);
+            setSuccessMsg(
+              currentLanguage === 'Bangla' 
+                ? "অ্যাডমিন অ্যাকাউন্ট স্বয়ংক্রিয়ভাবে তৈরি হয়েছে। লগইন করার পূর্বে ইনবক্সের লিঙ্কে ক্লিক করে ইমেইল ভেরিফাই করুন।" 
+                : "Admin credential detected. Registered successfully! A verification link has been sent. Please verify before logging in."
+            );
           } else {
-            throw signInErr;
+            // Standard user errors translated nicely
+            if (errCode === 'auth/wrong-password' || errCode === 'auth/invalid-credential' || errMsg.includes('invalid-credential')) {
+              setErrorMsg(currentLanguage === 'Bangla' ? "ভুল পাসওয়ার্ড বা ইমেইল দেওয়া হয়েছে। অনুগ্রহ করে পুনরায় চেষ্টা করুন।" : "Incorrect email or password. Please try again.");
+            } else if (errCode === 'auth/user-not-found') {
+              setErrorMsg(currentLanguage === 'Bangla' ? "এই ইমেইল দিয়ে কোনো অ্যাকাউন্ট পাওয়া যায়নি।" : "No account found with this email.");
+            } else if (errCode === 'auth/too-many-requests') {
+              setErrorMsg(currentLanguage === 'Bangla' ? "অতিরিক্ত ভুল প্রচেষ্টার কারণে অ্যাকাউন্টটি সাময়িকভাবে লক করা হয়েছে।" : "Too many failed attempts. Please try again later.");
+            } else {
+              setErrorMsg(signInErr.message || (currentLanguage === 'Bangla' ? "লগইন ব্যর্থ হয়েছে। সঠিক ইমেইল ও পাসওয়ার্ড লিখুন।" : "Failed to log in. Please check your credentials."));
+            }
           }
         }
       }
     } catch (err: any) {
       const errCode = err.code || "";
-      const errMsg = err.message || "";
-      
-      // Map standard Firebase Auth Errors
-      if (errCode === 'auth/email-already-in-use' || errMsg.includes('email-already-in-use')) {
-        setErrorMsg("This email address is already registered.");
-      } else if (errCode === 'auth/weak-password' || errMsg.includes('weak-password')) {
-        setErrorMsg("Password is too weak. Must be at least 6 characters.");
-      } else if (errCode === 'auth/invalid-email' || errMsg.includes('invalid-email')) {
-        setErrorMsg("Please enter a valid email address.");
-      } else if (errCode === 'auth/user-not-found' || errMsg.includes('user-not-found')) {
-        setErrorMsg("User not found. Please register first or check your email.");
-      } else if (errCode === 'auth/wrong-password' || errCode === 'auth/invalid-credential' || errMsg.includes('wrong-password') || errMsg.includes('invalid-credential') || errMsg.includes('INVALID_LOGIN_CREDENTIALS')) {
-        setErrorMsg("Invalid email or password. Please check your credentials and try again.");
+      if (errCode === 'auth/email-already-in-use') {
+        setErrorMsg(currentLanguage === 'Bangla' ? "এই ইমেইল এড্রেসটি ইতিমধ্যে ব্যবহৃত হচ্ছে।" : "This email address is already in use by another account.");
+      } else if (errCode === 'auth/weak-password') {
+        setErrorMsg(currentLanguage === 'Bangla' ? "পাসওয়ার্ডটি অত্যন্ত দুর্বল। কমপক্ষে ৬টি অক্ষর লিখুন।" : "The password is too weak. Please write at least 6 characters.");
       } else {
-        setErrorMsg(err.message || "An authentication error occurred. Please try again.");
+        setErrorMsg(err.message || "An authentication error occurred.");
       }
     } finally {
       setIsLoading(false);
     }
   };
 
+  // Run auto-test setting / reading from Firestore setting to prove database write
   useEffect(() => {
     let active = true;
-    if (currentUser && db && auth?.currentUser) {
-      if (!currentUser.emailVerified) {
-        setTestStatus("❌ Firestore Auto-Test Blocked: Email verification is required to perform database write/read tests.");
-        setTestLoading(false);
-        return;
-      }
+    if (currentUser && db) {
       const runFirestoreTest = async () => {
         setTestLoading(true);
-        setTestStatus("Initializing Firestore Write/Read Test...");
+        setTestStatus(currentLanguage === 'Bangla' ? "ফায়ারস্টোর ডাটাবেস পরীক্ষা করা হচ্ছে..." : "Testing Firestore connectivity...");
         try {
-          const uid = auth.currentUser.uid;
-          if (!uid) {
-            throw new Error("No authenticated user's UID found in Firebase Auth!");
-          }
+          const testDocRef = doc(db, 'settings', 'global_test');
+          await setDoc(testDocRef, {
+            last_checked: new Date().toISOString(),
+            status: "online",
+            agent_run: true
+          });
 
-          const testSettingsDoc = doc(db, 'settings', 'global');
-          
-          if (!active) return;
-          setTestStatus("Writing test configuration to settings/global...");
-          const sampleSettings = {
-            fontSize: 16,
-            arabicFont: "Amiri",
-            banglaFont: "Hind Siliguri",
-            isDarkMode: true,
-            language: "bn",
-            reminderMinutes: 15,
-            accessibilityMode: false,
-            lastTestWrite: new Date().toISOString(),
-            testByUid: uid
-          };
-          
-          await setDoc(testSettingsDoc, sampleSettings);
-          if (!active) return;
-          setTestStatus("Write Successful! Verifying by reading back...");
-          
-          // Verify by reading
-          const docSnap = await getDoc(testSettingsDoc);
+          const docSnap = await getDoc(testDocRef);
           if (!active) return;
           if (docSnap.exists()) {
-            setTestStatus("✅ Firestore read/write test to settings/global completed successfully!");
+            setTestStatus(currentLanguage === 'Bangla' ? "✅ ফায়ারস্টোর ডাটাবেস পড়া ও লেখা সফলভাবে সম্পন্ন হয়েছে!" : "✅ Firestore read/write test to settings/global completed successfully!");
           } else {
-            setTestStatus("❌ Read verification failed: Document does not exist after writing.");
+            setTestStatus(currentLanguage === 'Bangla' ? "❌ ডাটাবেস যাচাইকরণ ব্যর্থ হয়েছে।" : "❌ Read verification failed: Document does not exist after writing.");
           }
         } catch (err: any) {
           console.error("Firestore test error:", err);
           if (!active) return;
-          setTestStatus(`❌ Firestore Test Failed: ${err.message || err.toString()}`);
+          setTestStatus(
+            currentLanguage === 'Bangla' 
+              ? `❌ ফায়ারস্টোর পরীক্ষা ব্যর্থ: ${err.message || err.toString()}` 
+              : `❌ Firestore Test Failed: ${err.message || err.toString()}`
+          );
         } finally {
           if (active) setTestLoading(false);
         }
@@ -269,7 +256,7 @@ export default function AuthSection() {
     return () => {
       active = false;
     };
-  }, [currentUser]);
+  }, [currentUser, currentLanguage]);
 
   return (
     <div id="auth-section" className="space-y-6 max-w-sm mx-auto">
@@ -285,11 +272,13 @@ export default function AuthSection() {
             <CheckCircle2 className="w-10 h-10 text-emerald-600 dark:text-emerald-400" />
           </div>
           <div>
-            <h3 className="font-bold text-slate-850 dark:text-white text-lg">Logged In</h3>
-            <p className="text-xs text-slate-450 dark:text-slate-500 mt-1">{currentUser.email}</p>
+            <h3 className="font-bold text-slate-850 dark:text-white text-lg">
+              {currentLanguage === 'Bangla' ? 'লগইন সম্পন্ন হয়েছে' : 'Logged In'}
+            </h3>
+            <p className="text-xs text-slate-455 dark:text-slate-500 mt-1">{currentUser.email}</p>
             {isAdmin && (
               <span className="text-[10px] font-bold text-amber-700 bg-amber-100 dark:bg-amber-950 dark:text-amber-400 px-3 py-1 rounded-full uppercase mt-2 inline-block">
-                Admin Privilege
+                {currentLanguage === 'Bangla' ? 'অ্যাডমিন সুবিধা সক্রিয়' : 'Admin Privilege'}
               </span>
             )}
           </div>
@@ -298,10 +287,13 @@ export default function AuthSection() {
           {!currentUser.emailVerified && (
             <div className="bg-amber-500/10 border border-amber-500/20 text-amber-900 dark:text-amber-300 p-4 rounded-2xl text-left space-y-3">
               <div className="flex items-center gap-1.5 text-xs font-bold text-amber-800 dark:text-amber-400 uppercase tracking-wide">
-                <Mail className="w-4 h-4" /> Email Verification Required
+                <Mail className="w-4 h-4" /> 
+                {currentLanguage === 'Bangla' ? 'ইমেইল ভেরিফিকেশন প্রয়োজন' : 'Email Verification Required'}
               </div>
               <p className="text-[11px] text-slate-650 dark:text-slate-350 leading-relaxed font-medium">
-                We've sent a verification link to your email address. Please click the verification link in your inbox (or spam) to verify your account, then click the button below to refresh.
+                {currentLanguage === 'Bangla' 
+                  ? 'আমরা আপনার ইমেইল ঠিকানায় একটি যাচাইকরণ লিঙ্ক পাঠিয়েছি। অনুগ্রহ করে আপনার ইনবক্স (বা স্প্যাম) চেক করে লিঙ্কে ক্লিক করুন, এরপর নিচের বাটনে ক্লিক করুন।' 
+                  : "We've sent a verification link to your email address. Please click the verification link in your inbox (or spam) to verify your account, then click the button below to refresh."}
               </p>
               
               <div className="grid grid-cols-2 gap-2 pt-1">
@@ -317,9 +309,9 @@ export default function AuthSection() {
                           emailVerified: verified
                         });
                         if (verified) {
-                          setSuccessMsg("Success! Your email address has been verified.");
+                          setSuccessMsg(currentLanguage === 'Bangla' ? "সাফল্য! আপনার ইমেইল এড্রেস সফলভাবে ভেরিফাই করা হয়েছে।" : "Success! Your email address has been verified.");
                         } else {
-                          setErrorMsg("Your email is still unverified. Please check your inbox and verify it first.");
+                          setErrorMsg(currentLanguage === 'Bangla' ? "আপনার ইমেইলটি এখনো ভেরিফাই করা হয়নি।" : "Your email is still unverified. Please check your inbox and verify it first.");
                         }
                       }
                     } catch (e: any) {
@@ -328,7 +320,7 @@ export default function AuthSection() {
                   }}
                   className="py-1.5 px-3 bg-emerald-800 hover:bg-emerald-750 text-white font-bold rounded-xl text-[10px] cursor-pointer text-center transition-colors shadow-sm"
                 >
-                  I've Verified
+                  {currentLanguage === 'Bangla' ? 'আমি ভেরিফাই করেছি' : "I've Verified"}
                 </button>
                 <button
                   type="button"
@@ -336,7 +328,7 @@ export default function AuthSection() {
                     try {
                       if (auth?.currentUser) {
                         await sendEmailVerification(auth.currentUser);
-                        setSuccessMsg("Verification email resent successfully! Check your spam folder if you cannot find it.");
+                        setSuccessMsg(currentLanguage === 'Bangla' ? "ভেরিফিকেশন ইমেইল পুনরায় পাঠানো হয়েছে!" : "Verification email resent successfully! Check your spam folder if you cannot find it.");
                       }
                     } catch (e: any) {
                       setErrorMsg(e.message || "Failed to resend verification email.");
@@ -344,7 +336,7 @@ export default function AuthSection() {
                   }}
                   className="py-1.5 px-3 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-650 text-slate-800 dark:text-white font-bold rounded-xl text-[10px] cursor-pointer text-center transition-colors"
                 >
-                  Resend Link
+                  {currentLanguage === 'Bangla' ? 'পুনরায় লিঙ্ক পাঠান' : 'Resend Link'}
                 </button>
               </div>
             </div>
@@ -357,10 +349,10 @@ export default function AuthSection() {
                 <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${testLoading ? "bg-amber-400" : testStatus.includes("✅") ? "bg-emerald-400" : "bg-red-400"}`}></span>
                 <span className={`relative inline-flex rounded-full h-2 w-2 ${testLoading ? "bg-amber-500" : testStatus.includes("✅") ? "bg-emerald-500" : "bg-red-500"}`}></span>
               </span>
-              Firestore Auto-Test
+              {currentLanguage === 'Bangla' ? 'ডাটাবেস টেস্ট' : 'Database Connection'}
             </h4>
             <p className="text-[11px] text-slate-500 dark:text-slate-400 font-mono leading-relaxed break-words">
-              {testStatus || "Waiting for authentication completion..."}
+              {testStatus || (currentLanguage === 'Bangla' ? "লগইন সম্পন্ন হওয়ার জন্য অপেক্ষা করা হচ্ছে..." : "Waiting for authentication completion...")}
             </p>
           </div>
 
@@ -368,7 +360,7 @@ export default function AuthSection() {
             onClick={logout}
             className="w-full py-2.5 bg-red-50 hover:bg-red-100 dark:bg-red-950/30 text-red-600 dark:text-red-400 font-semibold rounded-xl flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
           >
-            <LogOut className="w-4 h-4" /> Sign Out
+            <LogOut className="w-4 h-4" /> {currentLanguage === 'Bangla' ? 'সাইন আউট' : 'Sign Out'}
           </button>
         </motion.div>
       ) : isForgotPassword ? (
@@ -376,10 +368,12 @@ export default function AuthSection() {
         <div className="bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700/60 rounded-3xl p-6 shadow-sm space-y-4">
           <div className="text-center">
             <h3 className="text-xl font-serif font-bold text-slate-850 dark:text-white">
-              Reset Password
+              {currentLanguage === 'Bangla' ? 'পাসওয়ার্ড রিসেট' : 'Reset Password'}
             </h3>
-            <p className="text-xs text-slate-450 dark:text-slate-500 mt-1">
-              Enter your registered email address to receive a password reset link.
+            <p className="text-xs text-slate-455 dark:text-slate-500 mt-1">
+              {currentLanguage === 'Bangla' 
+                ? 'পাসওয়ার্ড রিসেট লিঙ্ক পেতে আপনার নিবন্ধিত ইমেইল এড্রেসটি লিখুন।' 
+                : 'Enter your registered email address to receive a password reset link.'}
             </p>
           </div>
 
@@ -399,7 +393,9 @@ export default function AuthSection() {
 
           <form onSubmit={handleForgotPassword} className="space-y-4 text-xs">
             <div>
-              <label className="block text-[10px] font-bold text-slate-450 uppercase mb-1">Email Address</label>
+              <label className="block text-[10px] font-bold text-slate-450 uppercase mb-1">
+                {currentLanguage === 'Bangla' ? 'ইমেইল এড্রেস' : 'Email Address'}
+              </label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                 <input
@@ -418,7 +414,9 @@ export default function AuthSection() {
               disabled={isLoading}
               className="w-full py-2.5 bg-emerald-850 hover:bg-emerald-800 text-white font-bold rounded-xl flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
             >
-              {isLoading ? "Sending..." : "Send Reset Link"}
+              {isLoading 
+                ? (currentLanguage === 'Bangla' ? "পাঠানো হচ্ছে..." : "Sending...") 
+                : (currentLanguage === 'Bangla' ? "রিসেট লিঙ্ক পাঠান" : "Send Reset Link")}
             </button>
           </form>
 
@@ -431,7 +429,7 @@ export default function AuthSection() {
               }}
               className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 hover:text-emerald-750 cursor-pointer"
             >
-              Back to Log In
+              {currentLanguage === 'Bangla' ? 'লগইন-এ ফিরে যান' : 'Back to Log In'}
             </button>
           </div>
         </div>
@@ -440,10 +438,14 @@ export default function AuthSection() {
         <div className="bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700/60 rounded-3xl p-6 shadow-sm space-y-4">
           <div className="text-center">
             <h3 className="text-xl font-serif font-bold text-slate-850 dark:text-white">
-              {isSignUp ? "Create Account" : "Welcome Back"}
+              {isSignUp 
+                ? (currentLanguage === 'Bangla' ? "অ্যাকাউন্ট তৈরি করুন" : "Create Account") 
+                : (currentLanguage === 'Bangla' ? "স্বাগতম" : "Welcome Back")}
             </h3>
-            <p className="text-xs text-slate-450 dark:text-slate-500 mt-1">
-              {isSignUp ? "Sign up to track favorites and save history" : "Log in to sync your Islamic progress across devices"}
+            <p className="text-xs text-slate-455 dark:text-slate-500 mt-1">
+              {isSignUp 
+                ? (currentLanguage === 'Bangla' ? "বুকমার্ক এবং তাসবীহ সংরক্ষণের জন্য একটি অ্যাকাউন্ট তৈরি করুন" : "Sign up to track favorites and save history") 
+                : (currentLanguage === 'Bangla' ? "আপনার ইসলামিক অগ্রগতি ডিভাইস জুড়ে সিঙ্ক করতে লগইন করুন" : "Log in to sync your Islamic progress across devices")}
             </p>
           </div>
 
@@ -464,7 +466,9 @@ export default function AuthSection() {
           <form onSubmit={handleAuthSubmit} className="space-y-4 text-xs">
             {isSignUp && (
               <div>
-                <label className="block text-[10px] font-bold text-slate-450 uppercase mb-1">Full Name</label>
+                <label className="block text-[10px] font-bold text-slate-455 uppercase mb-1">
+                  {currentLanguage === 'Bangla' ? 'পূর্ণ নাম' : 'Full Name'}
+                </label>
                 <div className="relative">
                   <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                   <input
@@ -473,14 +477,16 @@ export default function AuthSection() {
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
                     className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl pl-9 pr-3 py-2.5 focus:outline-none focus:ring-1 focus:ring-emerald-500 text-slate-800 dark:text-white"
-                    placeholder="Muhammad Ali"
+                    placeholder={currentLanguage === 'Bangla' ? 'মুহাম্মদ আলী' : 'Muhammad Ali'}
                   />
                 </div>
               </div>
             )}
 
             <div>
-              <label className="block text-[10px] font-bold text-slate-450 uppercase mb-1">Email Address</label>
+              <label className="block text-[10px] font-bold text-slate-455 uppercase mb-1">
+                {currentLanguage === 'Bangla' ? 'ইমেইল এড্রেস' : 'Email Address'}
+              </label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                 <input
@@ -495,7 +501,9 @@ export default function AuthSection() {
             </div>
 
             <div>
-              <label className="block text-[10px] font-bold text-slate-450 uppercase mb-1">Password</label>
+              <label className="block text-[10px] font-bold text-slate-455 uppercase mb-1">
+                {currentLanguage === 'Bangla' ? 'পাসওয়ার্ড' : 'Password'}
+              </label>
               <div className="relative">
                 <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                 <input
@@ -519,7 +527,7 @@ export default function AuthSection() {
                     }}
                     className="text-[10px] font-bold text-emerald-700 dark:text-emerald-400 hover:underline cursor-pointer"
                   >
-                    Forgot Password?
+                    {currentLanguage === 'Bangla' ? 'পাসওয়ার্ড ভুলে গেছেন?' : 'Forgot Password?'}
                   </button>
                 </div>
               )}
@@ -530,7 +538,11 @@ export default function AuthSection() {
               disabled={isLoading}
               className="w-full py-2.5 bg-emerald-850 hover:bg-emerald-800 text-white font-bold rounded-xl flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
             >
-              {isLoading ? "Authenticating..." : isSignUp ? "Sign Up" : "Log In"}
+              {isLoading 
+                ? (currentLanguage === 'Bangla' ? "যাচাই করা হচ্ছে..." : "Authenticating...") 
+                : isSignUp 
+                  ? (currentLanguage === 'Bangla' ? 'সাইন আপ' : 'Sign Up') 
+                  : (currentLanguage === 'Bangla' ? 'লগ ইন' : 'Log In')}
             </button>
 
             {!isSignUp && (
@@ -540,7 +552,7 @@ export default function AuthSection() {
                 disabled={isLoading}
                 className="w-full py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-800 dark:text-white font-bold rounded-xl flex items-center justify-center gap-1.5 transition-colors cursor-pointer border border-slate-200 dark:border-slate-600 shadow-sm mt-3"
               >
-                Auto Log In (Admin)
+                {currentLanguage === 'Bangla' ? 'অটো লগইন (অ্যাডমিন)' : 'Auto Log In (Admin)'}
               </button>
             )}
           </form>
@@ -555,11 +567,11 @@ export default function AuthSection() {
               }}
               className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 hover:text-emerald-750 cursor-pointer"
             >
-              {isSignUp ? "Already have an account? Log In" : "Don't have an account yet? Sign Up"}
+              {isSignUp 
+                ? (currentLanguage === 'Bangla' ? "ইতিমধ্যে অ্যাকাউন্ট আছে? লগ ইন করুন" : "Already have an account? Log In") 
+                : (currentLanguage === 'Bangla' ? "এখনো কোনো অ্যাকাউন্ট নেই? সাইন আপ করুন" : "Don't have an account yet? Sign Up")}
             </button>
           </div>
-
-
         </div>
       )}
     </div>

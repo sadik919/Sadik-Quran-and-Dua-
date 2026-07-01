@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import { useApp } from '../context/AppContext';
-import { Volume2, VolumeX, Search, Sparkles } from 'lucide-react';
+import { useTranslation } from '../utils/translations';
+import { Volume2, Search, Sparkles } from 'lucide-react';
 import { motion } from 'motion/react';
 
 export default function NamesSection() {
   const { allahNames, settings } = useApp();
+  const { t, currentLanguage } = useTranslation();
   const [searchQuery, setSearchQuery] = useState("");
   const [speakingId, setSpeakingId] = useState<number | null>(null);
 
@@ -41,10 +43,14 @@ export default function NamesSection() {
       {/* Banner */}
       <div className="bg-gradient-to-br from-emerald-800 to-emerald-950 text-white rounded-3xl p-6 shadow-xl relative overflow-hidden text-center">
         <div className="relative z-10 space-y-1">
-          <span className="text-amber-400 text-xs font-bold tracking-widest uppercase block">99 Beautiful Names of Allah</span>
+          <span className="text-amber-400 text-xs font-bold tracking-widest uppercase block">
+            {currentLanguage === 'Bangla' ? 'আল্লাহ তাআলার ৯৯টি সুন্দর নাম' : '99 Beautiful Names of Allah'}
+          </span>
           <h3 className="text-2xl font-serif font-bold text-amber-200">Asmaul Husna</h3>
           <p className="text-emerald-100 text-xs px-4">
-            He is Allah, other than whom there is no deity, the Knower of the unseen and the witnessed. He is the Entirely Merciful, the Especially Merciful.
+            {currentLanguage === 'Bangla'
+              ? 'তিনিই আল্লাহ, যিনি ছাড়া কোনো উপাস্য নেই, দৃশ্য ও অদৃশ্যের পরিজ্ঞাত। তিনি পরম দয়ালু, অতি দয়ালু।'
+              : 'He is Allah, other than whom there is no deity, the Knower of the unseen and the witnessed. He is the Entirely Merciful, the Especially Merciful.'}
           </p>
         </div>
       </div>
@@ -55,7 +61,7 @@ export default function NamesSection() {
         <input
           id="names-search"
           type="text"
-          placeholder="Search Names by Arabic, transliteration or meaning..."
+          placeholder={currentLanguage === 'Bangla' ? 'আরবি, উচ্চারণ বা অর্থ দিয়ে আল্লাহর নাম খুঁজুন...' : 'Search Names by Arabic, transliteration or meaning...'}
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl pl-12 pr-4 py-3.5 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-800 dark:text-white"
@@ -114,7 +120,9 @@ export default function NamesSection() {
         ) : (
           <div className="col-span-full text-center py-12 bg-white dark:bg-slate-800 rounded-2xl border border-dashed border-slate-200 dark:border-slate-700">
             <Sparkles className="w-8 h-8 mx-auto text-emerald-400 mb-2" />
-            <p className="text-slate-500 dark:text-slate-400 text-sm">No Names match your query.</p>
+            <p className="text-slate-500 dark:text-slate-400 text-sm">
+              {currentLanguage === 'Bangla' ? 'কোনো নাম খুঁজে পাওয়া যায়নি।' : 'No Names match your query.'}
+            </p>
           </div>
         )}
       </div>

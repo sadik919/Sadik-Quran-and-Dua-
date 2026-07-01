@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useApp } from '../context/AppContext';
-import { RefreshCw, Play, Volume2, Save, Trash2, History } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
+import { useTranslation } from '../utils/translations';
+import { RefreshCw, Volume2, Save, Trash2, History } from 'lucide-react';
+import { motion } from 'motion/react';
 
 export default function TasbihSection() {
   const {
@@ -15,16 +16,17 @@ export default function TasbihSection() {
     clearTasbihHistory
   } = useApp();
 
+  const { t, currentLanguage } = useTranslation();
   const [target, setTarget] = useState<number>(33);
   const [dhikrArabic, setDhikrArabic] = useState<string>("سُبْحَانَ ٱللَّٰهِ");
   const [soundEnabled, setSoundEnabled] = useState<boolean>(true);
 
   const dhikrPresets = [
-    { name: "SubhanAllah", arabic: "سُبْحَانَ ٱللَّٰهِ", translation: "Glory be to Allah" },
-    { name: "Alhamdulillah", arabic: "ٱلْحَمْدُ لِلَّٰهِ", translation: "Praise be to Allah" },
-    { name: "Allahu Akbar", arabic: "ٱللَّٰهُ أَكْبَرُ", translation: "Allah is the Greatest" },
-    { name: "Astaghfirullah", arabic: "أَسْتَغْفِرُ ٱللَّٰهَ", translation: "I seek forgiveness from Allah" },
-    { name: "La ilaha illallah", arabic: "لَا إِلَٰهَ إِلَّا ٱللَّٰهُ", translation: "There is no deity but Allah" }
+    { name: "SubhanAllah", arabic: "سُبْحَانَ ٱللَّٰهِ", translation: "Glory be to Allah", translationBn: "আল্লাহ তাআলা পবিত্র" },
+    { name: "Alhamdulillah", arabic: "ٱلْحَمْدُ لِلَّٰهِ", translation: "Praise be to Allah", translationBn: "সকল প্রশংসা আল্লাহর জন্য" },
+    { name: "Allahu Akbar", arabic: "ٱللَّٰهُ أَكْبَرُ", translation: "Allah is the Greatest", translationBn: "আল্লাহ সর্বশ্রেষ্ঠ" },
+    { name: "Astaghfirullah", arabic: "أَسْتَغْفِرُ ٱللَّٰهَ", translation: "I seek forgiveness from Allah", translationBn: "আমি আল্লাহর ক্ষমা প্রার্থনা করছি" },
+    { name: "La ilaha illallah", arabic: "لَا إِلَٰهَ إِلَّا ٱللَّٰهُ", translation: "There is no deity but Allah", translationBn: "আল্লাহ ছাড়া কোনো উপাস্য নেই" }
   ];
 
   const handleDhikrChange = (name: string) => {
@@ -81,7 +83,7 @@ export default function TasbihSection() {
       {/* Selector & Target Presets */}
       <div className="bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700/50 rounded-2xl p-4 flex justify-between items-center shadow-sm gap-3">
         <div className="flex-1">
-          <label className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider block mb-1">Select Dhikr</label>
+          <label className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider block mb-1">{t("select_dhikr")}</label>
           <select
             id="dhikr-selector"
             value={activeTasbihName}
@@ -89,13 +91,15 @@ export default function TasbihSection() {
             className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-750 rounded-xl px-3 py-2 text-sm w-full font-medium text-slate-850 dark:text-white focus:outline-none focus:ring-1 focus:ring-emerald-500"
           >
             {dhikrPresets.map((p) => (
-              <option key={p.name} value={p.name}>{p.name}</option>
+              <option key={p.name} value={p.name}>
+                {currentLanguage === 'Bangla' ? p.translationBn : p.name}
+              </option>
             ))}
           </select>
         </div>
 
         <div>
-          <label className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider block mb-1">Target</label>
+          <label className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider block mb-1">{t("target_count")}</label>
           <div className="flex gap-1.5">
             {[33, 99, 100].map((num) => (
               <button
@@ -120,7 +124,9 @@ export default function TasbihSection() {
           {dhikrArabic}
         </span>
         <span className="text-xs text-slate-400 dark:text-slate-450 uppercase tracking-widest font-semibold mb-6">
-          {dhikrPresets.find(p => p.name === activeTasbihName)?.translation}
+          {currentLanguage === 'Bangla'
+            ? dhikrPresets.find(p => p.name === activeTasbihName)?.translationBn
+            : dhikrPresets.find(p => p.name === activeTasbihName)?.translation}
         </span>
 
         {/* Outer Circular Touch Area */}
@@ -133,12 +139,14 @@ export default function TasbihSection() {
           {/* Circular progress bar */}
           <div className="absolute inset-0 rounded-full border-4 border-emerald-950/20"></div>
           
-          <div className="text-[10px] uppercase font-bold tracking-widest text-emerald-200 mb-1">Total count</div>
+          <div className="text-[10px] uppercase font-bold tracking-widest text-emerald-200 mb-1">
+            {currentLanguage === 'Bangla' ? 'মোট গণনা' : 'Total count'}
+          </div>
           <span className="text-6xl font-mono font-black text-amber-200 drop-shadow-sm group-active:text-white transition-colors">
             {tasbihCount}
           </span>
           <div className="text-[10px] bg-emerald-900/60 text-emerald-100 px-3 py-1 rounded-full mt-2 font-semibold">
-            Target: {target}
+            {currentLanguage === 'Bangla' ? 'লক্ষ্য: ' : 'Target: '}{target}
           </div>
 
           {/* Dynamic light ring */}
@@ -148,7 +156,7 @@ export default function TasbihSection() {
         {/* Progress bar line */}
         <div className="w-full max-w-xs mt-8">
           <div className="flex justify-between text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-1.5">
-            <span>Loop Progress</span>
+            <span>{currentLanguage === 'Bangla' ? 'ধাপের অগ্রগতি' : 'Loop Progress'}</span>
             <span>{Math.round(progressPercentage)}%</span>
           </div>
           <div className="w-full h-2 bg-slate-200 dark:bg-slate-750 rounded-full overflow-hidden">
@@ -175,7 +183,7 @@ export default function TasbihSection() {
           <button
             onClick={resetTasbihCounter}
             className="p-3 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-350 rounded-full hover:bg-slate-50 dark:hover:bg-slate-750 transition-colors border border-slate-200 dark:border-slate-700 cursor-pointer"
-            title="Reset"
+            title={currentLanguage === 'Bangla' ? 'রিসেট' : 'Reset'}
           >
             <RefreshCw className="w-5 h-5" />
           </button>
@@ -183,7 +191,7 @@ export default function TasbihSection() {
           <button
             onClick={saveTasbihCounter}
             className="p-3 bg-white dark:bg-slate-800 text-emerald-700 dark:text-emerald-400 rounded-full hover:bg-emerald-50 dark:hover:bg-slate-750 transition-colors border border-slate-200 dark:border-slate-700 cursor-pointer"
-            title="Save To History"
+            title={currentLanguage === 'Bangla' ? 'ইতিহাসে সংরক্ষণ করুন' : 'Save To History'}
           >
             <Save className="w-5 h-5" />
           </button>
@@ -195,14 +203,14 @@ export default function TasbihSection() {
         <div className="flex justify-between items-center mb-3">
           <h4 className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5 uppercase tracking-wider">
             <History className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-            Tasbih Sessions History
+            {currentLanguage === 'Bangla' ? 'তাসবীহ সেশনের ইতিহাস' : 'Tasbih Sessions History'}
           </h4>
           {tasbihHistory.length > 0 && (
             <button
               onClick={clearTasbihHistory}
               className="text-[10px] font-bold text-red-500 hover:text-red-600 uppercase flex items-center gap-1 cursor-pointer"
             >
-              <Trash2 className="w-3.5 h-3.5" /> Clear All
+              <Trash2 className="w-3.5 h-3.5" /> {currentLanguage === 'Bangla' ? 'সব মুছুন' : 'Clear All'}
             </button>
           )}
         </div>
@@ -215,17 +223,19 @@ export default function TasbihSection() {
                 className="bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-2.5 rounded-xl flex justify-between items-center text-xs"
               >
                 <div>
-                  <span className="font-semibold text-slate-800 dark:text-slate-200">{item.name}</span>
+                  <span className="font-semibold text-slate-800 dark:text-slate-200">
+                    {currentLanguage === 'Bangla' ? (dhikrPresets.find(p => p.name === item.name)?.translationBn || item.name) : item.name}
+                  </span>
                   <p className="text-[10px] text-slate-400 dark:text-slate-500">{item.date}</p>
                 </div>
                 <span className="font-mono font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-1 rounded-lg">
-                  {item.count} counts
+                  {item.count} {currentLanguage === 'Bangla' ? 'বার' : 'counts'}
                 </span>
               </div>
             ))}
           </div>
         ) : (
-          <p className="text-center text-xs text-slate-400 py-6">Your saved dhikr loops will appear here.</p>
+          <p className="text-center text-xs text-slate-400 py-6">{t("recent_counts")}</p>
         )}
       </div>
     </div>

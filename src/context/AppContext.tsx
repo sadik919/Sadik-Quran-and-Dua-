@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { QuranSurah, QuranAyah, Hadith, DuaItem, IslamicEvent, Article, TasbihHistory } from '../types';
 import {
   initialSurahs,
@@ -10,6 +10,9 @@ import {
   initialEvents,
   defaultSettings
 } from '../data/initialData';
+import { allSurahs } from '../data/allSurahs';
+import { allHadiths } from '../data/allHadiths';
+import { allDuas } from '../data/allDuas';
 import { db, auth, OperationType, handleFirestoreError } from '../lib/firebase';
 import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, setDoc, getDoc } from 'firebase/firestore';
 import { onAuthStateChanged } from 'firebase/auth';
@@ -77,6 +80,7 @@ interface AppContextType {
   playAudio: (title: string, url: string) => void;
   stopAudio: () => void;
   togglePlayPauseAudio: () => void;
+  seekAudio: (time: number) => void;
 
   // Prayer time helper
   city: string;
@@ -93,7 +97,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   // Load local state
   const [surahs, setSurahs] = useState<QuranSurah[]>(() => {
     const local = localStorage.getItem('noor_surahs');
-    return local ? JSON.parse(local) : initialSurahs;
+    if (local) {
+      try {
+        const parsed = JSON.parse(local);
+        if (Array.isArray(parsed) && parsed.length >= 114) {
+          return parsed;
+        }
+      } catch (e) {
+        console.error("Failed to parse local surahs, using default 114 surahs", e);
+      }
+    }
+    return allSurahs;
   });
 
   const [ayahs, setAyahs] = useState<QuranAyah[]>(() => {
@@ -103,12 +117,32 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const [hadiths, setHadiths] = useState<Hadith[]>(() => {
     const local = localStorage.getItem('noor_hadiths');
-    return local ? JSON.parse(local) : initialHadiths;
+    if (local) {
+      try {
+        const parsed = JSON.parse(local);
+        if (Array.isArray(parsed) && parsed.length >= 200) {
+          return parsed;
+        }
+      } catch (e) {
+        console.error("Local hadiths error:", e);
+      }
+    }
+    return allHadiths;
   });
 
   const [duas, setDuas] = useState<DuaItem[]>(() => {
     const local = localStorage.getItem('noor_duas');
-    return local ? JSON.parse(local) : initialDuas;
+    if (local) {
+      try {
+        const parsed = JSON.parse(local);
+        if (Array.isArray(parsed) && parsed.length >= 200) {
+          return parsed;
+        }
+      } catch (e) {
+        console.error("Local duas error:", e);
+      }
+    }
+    return allDuas;
   });
 
   const [articles, setArticles] = useState<Article[]>(() => {
@@ -160,6 +194,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   // Audio player state
   const [activeAudio, setActiveAudio] = useState<AppContextType['activeAudio']>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   // City for prayer times
   const [city, setCity] = useState<string>("Dhaka");
@@ -174,6 +209,56 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setToast(prev => prev?.message === message ? null : prev);
     }, 4000);
   };
+
+  useEffect(() => {
+    if (typeof Audio === 'undefined') return;
+
+    const audio = new Audio();
+    audioRef.current = audio;
+
+    const handlePlay = () => {
+      setActiveAudio(prev => prev ? { ...prev, isPlaying: true } : null);
+    };
+
+    const handlePause = () => {
+      setActiveAudio(prev => prev ? { ...prev, isPlaying: false } : null);
+    };
+
+    const handleTimeUpdate = () => {
+      setActiveAudio(prev => prev ? { ...prev, currentTime: audio.currentTime } : null);
+    };
+
+    const handleLoadedMetadata = () => {
+      setActiveAudio(prev => prev ? { ...prev, duration: audio.duration } : null);
+    };
+
+    const handleEnded = () => {
+      setActiveAudio(null);
+    };
+
+    const handleError = (e: any) => {
+      console.error("Audio playback error:", e);
+      showToast("Failed to load or play Quran audio.", "error");
+      setActiveAudio(null);
+    };
+
+    audio.addEventListener('play', handlePlay);
+    audio.addEventListener('pause', handlePause);
+    audio.addEventListener('timeupdate', handleTimeUpdate);
+    audio.addEventListener('loadedmetadata', handleLoadedMetadata);
+    audio.addEventListener('ended', handleEnded);
+    audio.addEventListener('error', handleError);
+
+    return () => {
+      audio.pause();
+      audio.removeEventListener('play', handlePlay);
+      audio.removeEventListener('pause', handlePause);
+      audio.removeEventListener('timeupdate', handleTimeUpdate);
+      audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
+      audio.removeEventListener('ended', handleEnded);
+      audio.removeEventListener('error', handleError);
+    };
+  }, []);
 
   // Save changes to localStorage for offline persistence
   useEffect(() => {
@@ -322,15 +407,21 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             return;
           }
 
-          if (!surahsSnap.empty) {
-            setSurahs(surahsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as any)));
-          } else if (canSeed) {
-            console.log("Seeding surahs collection...");
-            for (const s of initialSurahs) {
-              try {
-                await setDoc(doc(db, 'surahs', `surah_${s.number}`), s);
-              } catch (err) {
-                handleFirestoreError(err, OperationType.WRITE, `surahs/surah_${s.number}`);
+          if (!surahsSnap.empty && surahsSnap.size >= 114) {
+            const loaded = surahsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as any));
+            loaded.sort((a, b) => a.number - b.number);
+            setSurahs(loaded);
+          } else {
+            // Firestore has incomplete or empty surahs registry, use canonical 114 surahs
+            setSurahs(allSurahs);
+            if (canSeed) {
+              console.log("Seeding all 114 surahs collection to Firestore...");
+              for (const s of allSurahs) {
+                try {
+                  await setDoc(doc(db, 'surahs', `surah_${s.number}`), s);
+                } catch (err) {
+                  console.warn(`Could not seed surah_${s.number} into Firestore:`, err);
+                }
               }
             }
           }
@@ -357,26 +448,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             }
           }
 
-          // 3. Hadith & Hadiths (syncing both singular and plural)
-          let hadithSnap;
-          try {
-            hadithSnap = await getDocs(collection(db, 'hadith'));
-          } catch (err) {
-            handleFirestoreError(err, OperationType.LIST, 'hadith');
-            return;
-          }
-
-          if (hadithSnap.empty && canSeed) {
-            console.log("Seeding hadith collection...");
-            for (const h of initialHadiths) {
-              try {
-                await setDoc(doc(db, 'hadith', h.id), h);
-              } catch (err) {
-                handleFirestoreError(err, OperationType.WRITE, `hadith/${h.id}`);
-              }
-            }
-          }
-
+          // 3. Hadiths (syncing with allHadiths)
           let hadithsSnap;
           try {
             hadithsSnap = await getDocs(collection(db, 'hadiths'));
@@ -386,19 +458,41 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           }
 
           if (!hadithsSnap.empty) {
-            setHadiths(hadithsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as any)));
+            const firestoreHadiths = hadithsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as any));
+            const merged = [...allHadiths];
+            firestoreHadiths.forEach(fh => {
+              const idx = merged.findIndex(h => h.id === fh.id);
+              if (idx !== -1) {
+                merged[idx] = fh;
+              } else {
+                merged.push(fh);
+              }
+            });
+            setHadiths(merged);
+            
+            // Asynchronously populate missing ones in Firestore if under 200 items to keep database up-to-date
+            if (canSeed && firestoreHadiths.length < 200) {
+              console.log("Back-seeding remaining hadiths to Firestore...");
+              for (const h of allHadiths) {
+                if (!firestoreHadiths.some(fh => fh.id === h.id)) {
+                  setDoc(doc(db, 'hadiths', h.id), h).catch(err => {
+                    console.warn(`Could not seed hadith ${h.id} in background:`, err);
+                  });
+                }
+              }
+            }
           } else if (canSeed) {
-            console.log("Seeding hadiths collection...");
-            for (const h of initialHadiths) {
+            console.log("Seeding all 200 hadiths collection to Firestore...");
+            for (const h of allHadiths) {
               try {
                 await setDoc(doc(db, 'hadiths', h.id), h);
               } catch (err) {
-                handleFirestoreError(err, OperationType.WRITE, `hadiths/${h.id}`);
+                console.warn(`Could not seed hadiths ${h.id}:`, err);
               }
             }
           }
 
-          // 4. Duas
+          // 4. Duas (syncing with allDuas)
           let duasSnap;
           try {
             duasSnap = await getDocs(collection(db, 'duas'));
@@ -408,14 +502,36 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           }
 
           if (!duasSnap.empty) {
-            setDuas(duasSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as any)));
+            const firestoreDuas = duasSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as any));
+            const merged = [...allDuas];
+            firestoreDuas.forEach(fd => {
+              const idx = merged.findIndex(d => d.id === fd.id);
+              if (idx !== -1) {
+                merged[idx] = fd;
+              } else {
+                merged.push(fd);
+              }
+            });
+            setDuas(merged);
+
+            // Asynchronously populate missing ones in Firestore if under 200 items to keep database up-to-date
+            if (canSeed && firestoreDuas.length < 200) {
+              console.log("Back-seeding remaining duas to Firestore...");
+              for (const d of allDuas) {
+                if (!firestoreDuas.some(fd => fd.id === d.id)) {
+                  setDoc(doc(db, 'duas', d.id), d).catch(err => {
+                    console.warn(`Could not seed dua ${d.id} in background:`, err);
+                  });
+                }
+              }
+            }
           } else if (canSeed) {
-            console.log("Seeding duas collection...");
-            for (const d of initialDuas) {
+            console.log("Seeding all 200 duas collection to Firestore...");
+            for (const d of allDuas) {
               try {
                 await setDoc(doc(db, 'duas', d.id), d);
               } catch (err) {
-                handleFirestoreError(err, OperationType.WRITE, `duas/${d.id}`);
+                console.warn(`Could not seed duas ${d.id}:`, err);
               }
             }
           }
@@ -650,28 +766,63 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setSettings(prev => ({ ...prev, [key]: value }));
   };
 
-  // Audio system simulation
+  // Audio system real implementation
   const playAudio = (title: string, url: string) => {
+    if (!audioRef.current) {
+      if (typeof Audio !== 'undefined') {
+        audioRef.current = new Audio();
+      } else {
+        return;
+      }
+    }
+
+    const audio = audioRef.current;
+
+    if (audio.src !== url) {
+      audio.src = url;
+      audio.load();
+    }
+
     setActiveAudio({
       title,
       url,
-      isPlaying: true,
-      duration: 120, // simulate duration
-      currentTime: 0
+      isPlaying: false, // will update to true once the browser 'play' event fires
+      duration: audio.duration || undefined,
+      currentTime: audio.currentTime || 0
+    });
+
+    audio.play().catch(err => {
+      console.error("Error playing audio:", err);
+      showToast("Failed to play audio. Please check network or click play again.", "error");
+      setActiveAudio(null);
     });
   };
 
   const stopAudio = () => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+    }
     setActiveAudio(null);
   };
 
   const togglePlayPauseAudio = () => {
-    if (activeAudio) {
-      setActiveAudio({
-        ...activeAudio,
-        isPlaying: !activeAudio.isPlaying
+    if (!audioRef.current) return;
+    const audio = audioRef.current;
+    if (audio.paused) {
+      audio.play().catch(err => {
+        console.error("Error resuming audio:", err);
+        showToast("Failed to play audio.", "error");
       });
+    } else {
+      audio.pause();
     }
+  };
+
+  const seekAudio = (time: number) => {
+    if (!audioRef.current) return;
+    audioRef.current.currentTime = time;
+    setActiveAudio(prev => prev ? { ...prev, currentTime: time } : null);
   };
 
   return (
@@ -684,7 +835,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       tasbihCount, setTasbihCount, activeTasbihName, setActiveTasbihName,
       tasbihHistory, saveTasbihCounter, resetTasbihCounter, clearTasbihHistory,
       settings, updateSettings,
-      activeAudio, playAudio, stopAudio, togglePlayPauseAudio,
+      activeAudio, playAudio, stopAudio, togglePlayPauseAudio, seekAudio,
       city, setCity,
       selectedSurah, setSelectedSurah,
       toast, showToast

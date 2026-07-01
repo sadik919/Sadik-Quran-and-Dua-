@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
-import { MapPin, Bell, BellOff, Volume2, Search, Compass, RefreshCw } from 'lucide-react';
+import { useTranslation } from '../utils/translations';
+import { MapPin, Bell, BellOff, Volume2, Compass, RefreshCw } from 'lucide-react';
 import { motion } from 'motion/react';
 
 // Hardcoded coordinates for calculated prayer times
@@ -16,9 +17,9 @@ const CITY_COORDINATES: Record<string, { lat: number; lng: number; timezone: num
 };
 
 export default function PrayerTimesSection() {
-  const { city, setCity, settings, updateSettings } = useApp();
+  const { city, setCity, settings } = useApp();
+  const { currentLanguage } = useTranslation();
   const [isLocating, setIsLocating] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
   const [activeNotifications, setActiveNotifications] = useState<Record<string, boolean>>({
     fajr: true,
     dhuhr: true,
@@ -65,8 +66,7 @@ export default function PrayerTimesSection() {
     setIsLocating(true);
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
-        (position) => {
-          // Find closest supported city or set "My Location"
+        () => {
           setCity("Dhaka"); // Defaulting safely
           setTimeout(() => {
             setIsLocating(false);
@@ -74,7 +74,11 @@ export default function PrayerTimesSection() {
         },
         () => {
           setIsLocating(false);
-          alert("Could not detect location. Defaulting to Dhaka.");
+          alert(
+            currentLanguage === 'Bangla'
+              ? "অবস্থান সনাক্ত করা যায়নি। ঢাকা ডিফল্ট হিসেবে সেট করা হচ্ছে।"
+              : "Could not detect location. Defaulting to Dhaka."
+          );
         }
       );
     } else {
@@ -87,6 +91,38 @@ export default function PrayerTimesSection() {
       ...prev,
       [prayer]: !prev[prayer]
     }));
+  };
+
+  const getCityTranslated = (c: string) => {
+    if (currentLanguage === 'Bangla') {
+      const bNames: Record<string, string> = {
+        "Dhaka": "ঢাকা",
+        "London": "লন্ডন",
+        "New York": "নিউ ইয়র্ক",
+        "Riyadh": "রিয়াদ",
+        "Cairo": "কায়রো",
+        "Jakarta": "জাকার্তা",
+        "Kuala Lumpur": "কুয়ালালামপুর",
+        "Sydney": "সিডনি"
+      };
+      return bNames[c] || c;
+    }
+    return c;
+  };
+
+  const getPrayerTranslated = (p: string) => {
+    if (currentLanguage === 'Bangla') {
+      const pNames: Record<string, string> = {
+        "Fajr": "ফজর",
+        "Sunrise": "সূর্যোদয়",
+        "Dhuhr": "যোহর",
+        "Asr": "আসর",
+        "Maghrib": "মাগরিব",
+        "Isha": "এশা"
+      };
+      return pNames[p] || p;
+    }
+    return p;
   };
 
   const prayers = [
@@ -108,12 +144,16 @@ export default function PrayerTimesSection() {
         
         <div className="flex justify-between items-start relative z-10">
           <div>
-            <span className="text-emerald-300 text-xs font-semibold tracking-widest uppercase">Current Location</span>
+            <span className="text-emerald-300 text-xs font-semibold tracking-widest uppercase">
+              {currentLanguage === 'Bangla' ? 'বর্তমান অবস্থান' : 'Current Location'}
+            </span>
             <h2 className="text-3xl font-serif font-bold text-amber-200 mt-1 flex items-center gap-2">
               <MapPin className="w-6 h-6 text-amber-400" />
-              {city}
+              {getCityTranslated(city)}
             </h2>
-            <p className="text-emerald-100 text-xs mt-1">Hijri: 14 Shawwal 1447 • Calc: standard</p>
+            <p className="text-emerald-100 text-xs mt-1">
+              {currentLanguage === 'Bangla' ? 'হিজরি: ১৪ শাওয়াল ১৪৪৭ • স্ট্যান্ডার্ড ক্যালকুলেশন' : 'Hijri: 14 Shawwal 1447 • Calc: standard'}
+            </p>
           </div>
           <button
             onClick={handleAutoLocation}
@@ -135,7 +175,7 @@ export default function PrayerTimesSection() {
                   : "bg-emerald-900/40 border border-emerald-700 text-emerald-100 hover:bg-emerald-800/60"
               }`}
             >
-              {cityName}
+              {getCityTranslated(cityName)}
             </button>
           ))}
         </div>
@@ -144,8 +184,14 @@ export default function PrayerTimesSection() {
       {/* Prayer Times Grid */}
       <div id="prayer-times-list" className="space-y-3">
         <div className="flex justify-between items-center px-2">
-          <h3 className="text-sm font-semibold text-emerald-800 dark:text-emerald-300 uppercase tracking-wider">Today's Prayers</h3>
-          <span className="text-xs text-slate-500 dark:text-slate-400">Alarm: {settings.reminderMinutes}m before</span>
+          <h3 className="text-sm font-semibold text-emerald-800 dark:text-emerald-300 uppercase tracking-wider">
+            {currentLanguage === 'Bangla' ? 'আজকের নামাজের সময়সূচী' : "Today's Prayers"}
+          </h3>
+          <span className="text-xs text-slate-500 dark:text-slate-400">
+            {currentLanguage === 'Bangla'
+              ? `রিমাইন্ডার: ${settings.reminderMinutes} মিনিট পূর্বে`
+              : `Alarm: ${settings.reminderMinutes}m before`}
+          </span>
         </div>
 
         <div className="grid gap-3">
@@ -158,13 +204,17 @@ export default function PrayerTimesSection() {
               <div className="flex items-center gap-4">
                 <span className="text-2xl">{prayer.icon}</span>
                 <div>
-                  <h4 className="font-semibold text-slate-800 dark:text-white">{prayer.name}</h4>
-                  <p className="text-xs text-slate-400 dark:text-slate-500">{prayer.arabic}</p>
+                  <h4 className="font-semibold text-slate-800 dark:text-white">{getPrayerTranslated(prayer.name)}</h4>
+                  <p className="text-xs text-slate-400 dark:text-slate-500 font-serif">{prayer.arabic}</p>
                 </div>
               </div>
 
               <div className="flex items-center gap-4">
-                <span className="font-mono font-bold text-lg text-emerald-700 dark:text-emerald-400">{prayer.time}</span>
+                <span className="font-mono font-bold text-lg text-emerald-700 dark:text-emerald-400">
+                  {currentLanguage === 'Bangla'
+                    ? prayer.time.replace('AM', 'পূর্বাহ্ন').replace('PM', 'অপরাহ্ন')
+                    : prayer.time}
+                </span>
                 {!prayer.noAlert && (
                   <button
                     onClick={() => toggleNotification(prayer.key)}
@@ -187,7 +237,9 @@ export default function PrayerTimesSection() {
       <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200/50 dark:border-amber-900/30 rounded-2xl p-4 text-center">
         <p className="text-xs text-amber-800 dark:text-amber-300 flex items-center justify-center gap-2">
           <Volume2 className="w-4 h-4 shrink-0" />
-          Athan notifications will trigger 15 minutes before congregation times.
+          {currentLanguage === 'Bangla'
+            ? 'জামায়াতের ১৫ মিনিট পূর্বে আযান নোটিফিকেশন দেওয়া হবে।'
+            : 'Athan notifications will trigger 15 minutes before congregation times.'}
         </p>
       </div>
     </div>
